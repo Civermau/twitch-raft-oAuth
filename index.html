@@ -5,19 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitch Token Generator - Civermau.dev</title>
     <style>
+        /* Light mode (default) */
+        :root {
+            --bg-color: #f0f0ff;
+            --container-bg: white;
+            --text-color: #333;
+            --token-bg: #f8f9fa;
+            --button-bg: #9147ff;
+            --button-hover: #772ce8;
+            --success-color: #22863a;
+            --error-color: #dc3545;
+        }
+
+        /* Dark mode */
+        [data-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --container-bg: #2a2a40;
+            --text-color: #f0f0f0;
+            --token-bg: #3a3a50;
+            --button-bg: #772ce8;
+            --button-hover: #9147ff;
+            --success-color: #4caf50;
+            --error-color: #ff4444;
+        }
+
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            background-color: #f0f0ff;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             min-height: 100vh;
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
-            background: white;
+            background: var(--container-bg);
             padding: 2rem;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -27,16 +53,35 @@
         }
 
         .token-box {
-            background: #f8f9fa;
+            background: var(--token-bg);
             padding: 1rem;
             border-radius: 0.5rem;
             word-break: break-all;
             font-family: monospace;
             margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .token-box input {
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            font-family: monospace;
+            width: 80%;
+            outline: none;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
         }
 
         button {
-            background: #9147ff;
+            background: var(--button-bg);
             color: white;
             border: none;
             padding: 0.8rem 1.5rem;
@@ -47,24 +92,43 @@
         }
 
         button:hover {
-            background: #772ce8;
+            background: var(--button-hover);
         }
 
         .success {
-            color: #22863a;
+            color: var(--success-color);
             margin-top: 1rem;
             display: none;
         }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--button-bg);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body>
+<body data-theme="dark">
     <div class="container">
         <h1>Twitch Access Token</h1>
-        <div id="token-display" class="token-box">Loading token...</div>
-        <button onclick="copyToken()">Copy Token</button>
+        <div class="token-box">
+            <input type="password" id="token-input" readonly>
+            <button onclick="toggleTokenVisibility()" id="toggle-visibility">👁️</button>
+        </div>
+        <div class="buttons">
+            <button onclick="copyToken()">Copy Token</button>
+        </div>
         <div id="copy-success" class="success">Token copied to clipboard!</div>
-        <p id="error-message" style="color: #dc3545; display: none;">No token found in URL. Please try authenticating again.</p>
+        <p id="error-message" style="color: var(--error-color); display: none;">No token found in URL. Please try authenticating again.</p>
     </div>
+
+    <button class="theme-toggle" onclick="toggleTheme()">☀️</button>
 
     <script>
         // Extract token from URL fragment
@@ -77,27 +141,65 @@
         // Display token or error
         function displayToken() {
             const token = getTokenFromURL();
-            const tokenDisplay = document.getElementById('token-display');
+            const tokenInput = document.getElementById('token-input');
             const errorMessage = document.getElementById('error-message');
 
             if (token) {
-                tokenDisplay.textContent = token;
+                tokenInput.value = token;
                 errorMessage.style.display = 'none';
+                autoCopyToken(token); // Auto-copy token
             } else {
-                tokenDisplay.textContent = 'No token available';
+                tokenInput.value = '';
                 errorMessage.style.display = 'block';
             }
         }
 
-        // Copy token to clipboard
+        // Auto-copy token to clipboard
+        function autoCopyToken(token) {
+            navigator.clipboard.writeText(token).then(() => {
+                const success = document.getElementById('copy-success');
+                success.textContent = 'Token automatically copied to clipboard!';
+                success.style.display = 'block';
+                setTimeout(() => success.style.display = 'none', 3000);
+            });
+        }
+
+        // Copy token to clipboard manually
         function copyToken() {
             const token = getTokenFromURL();
             if (token) {
                 navigator.clipboard.writeText(token).then(() => {
                     const success = document.getElementById('copy-success');
+                    success.textContent = 'Token copied to clipboard!';
                     success.style.display = 'block';
                     setTimeout(() => success.style.display = 'none', 2000);
                 });
+            }
+        }
+
+        // Toggle token visibility
+        function toggleTokenVisibility() {
+            const tokenInput = document.getElementById('token-input');
+            const toggleButton = document.getElementById('toggle-visibility');
+            if (tokenInput.type === 'password') {
+                tokenInput.type = 'text';
+                toggleButton.textContent = '🙈';
+            } else {
+                tokenInput.type = 'password';
+                toggleButton.textContent = '👁️';
+            }
+        }
+
+        // Toggle dark/light mode
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.querySelector('.theme-toggle');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
             }
         }
 
